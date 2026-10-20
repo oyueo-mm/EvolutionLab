@@ -1,0 +1,26 @@
+# dependencies & build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# environment variables & credentials
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.pfx
+.npmrc
+
+# logs, OS & editor files
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# local tooling state
+.claude/
