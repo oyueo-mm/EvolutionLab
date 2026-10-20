@@ -1,18 +1,56 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Pretendard", "Inter", system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  /* Light, layered elevation instead of heavy borders */
+  --shadow-float: 0 1px 2px rgb(16 24 40 / 0.06), 0 4px 16px rgb(16 24 40 / 0.08);
+  --shadow-panel: -8px 0 32px rgb(16 24 40 / 0.12);
+  --shadow-sheet: 0 -8px 32px rgb(16 24 40 / 0.12);
+}
+
 :root {
-  font-family: "Pretendard", "Inter", system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
   -webkit-font-smoothing: antialiased;
+  color-scheme: light;
 }
 
 html, body, #root { height: 100%; margin: 0; overflow: hidden; }
-body { background: #f5f5f4; }
+body { background: #fff; color: #171717; }
 
-/* Compact range input */
-.lab-range { -webkit-appearance: none; appearance: none; height: 16px; background: transparent; cursor: pointer; }
-.lab-range:disabled { cursor: default; }
-.lab-range::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: #d6d3d1; }
-.lab-range::-moz-range-track { height: 3px; border-radius: 2px; background: #d6d3d1; }
-.lab-range::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: -4.5px; border-radius: 50%; background: #1c1917; border: 2px solid #fff; box-shadow: 0 0 0 1px #a8a29e; }
-.lab-range::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: #1c1917; border: 2px solid #fff; box-shadow: 0 0 0 1px #a8a29e; }
-.lab-range:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+/* Visible keyboard focus everywhere, never on mouse clicks */
+:where(button, select, input, [role="separator"], [tabindex]):focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Range input with a filled track. --fill is set inline from the value (0%–100%). */
+.lab-range {
+  -webkit-appearance: none; appearance: none;
+  height: 18px; margin: 0; background: transparent; cursor: pointer;
+  --fill: 0%;
+}
+.lab-range:disabled { cursor: default; opacity: 0.45; }
+.lab-range::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 999px;
+  background: linear-gradient(to right, #171717 var(--fill), #e5e5e5 var(--fill));
+}
+.lab-range::-moz-range-track {
+  height: 4px; border-radius: 999px;
+  background: linear-gradient(to right, #171717 var(--fill), #e5e5e5 var(--fill));
+}
+.lab-range::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%;
+  background: #fff; border: 2px solid #171717; box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+  transition: transform 120ms;
+}
+.lab-range::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #fff; border: 2px solid #171717; box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+}
+.lab-range:active::-webkit-slider-thumb { transform: scale(1.15); }
+
+/* Thin, unobtrusive scrollbars inside panels */
+.thin-scroll { scrollbar-width: thin; scrollbar-color: #d4d4d4 transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

@@ -2,6 +2,13 @@
 import type { StatsSample } from '../sim/types';
 import { GENE_KEYS } from '../sim/types';
 
+export function formatTime(t: number): string {
+  if (t < 120) return `${Math.round(t)}s`;
+  const m = Math.floor(t / 60);
+  if (m < 120) return `${m}m`;
+  return `${(t / 3600).toFixed(1)}h`;
+}
+
 export interface ChartRow {
   t: number;
   prey: number;

@@ -5,11 +5,11 @@ import { CREATURE_STRIDE, type FrameMessage } from '../worker/protocol';
 import type { SimConfig, ZoneAccess } from '../sim/types';
 
 export const COLORS = {
-  background: '#e9e9e4',
-  world: '#fbfbf8',
-  worldBorder: '#c9c9c0',
-  grid: '#efefe9',
-  prey: '#26262b',
+  background: '#f5f6f8',
+  world: '#ffffff',
+  worldBorder: '#dfe1e6',
+  grid: '#f1f2f4',
+  prey: '#1f2328',
   predator: '#d9412e',
   food: '#2f9e44',
   select: '#2563eb',
@@ -22,6 +22,8 @@ const ZONE_STYLE: Record<ZoneAccess, { fill: string; stroke: string; label: stri
   none: { fill: 'rgba(60,60,60,0.14)', stroke: 'rgba(60,60,60,0.6)', label: '출입 불가' },
 };
 
+export interface Inset { top: number; right: number; bottom: number; left: number }
+
 export class Camera {
   /** World coordinate at the canvas centre. */
   cx = 0;
@@ -29,10 +31,18 @@ export class Camera {
   /** Screen pixels per world unit. */
   zoom = 1;
 
-  fit(worldW: number, worldH: number, viewW: number, viewH: number): void {
-    this.cx = worldW / 2;
-    this.cy = worldH / 2;
-    this.zoom = Math.min(viewW / (worldW * 1.04), viewH / (worldH * 1.04));
+  /**
+   * Fits the whole world into the view, leaving `inset` pixels free on each side
+   * (e.g. room for the floating control dock) and centring it in the remaining area.
+   */
+  fit(worldW: number, worldH: number, viewW: number, viewH: number, inset: Inset = { top: 16, right: 16, bottom: 16, left: 16 }): void {
+    const availW = Math.max(40, viewW - inset.left - inset.right);
+    const availH = Math.max(40, viewH - inset.top - inset.bottom);
+    this.zoom = Math.min(availW / worldW, availH / worldH);
+    // screen point of the free area's centre → world centre
+    const sx = inset.left + availW / 2, sy = inset.top + availH / 2;
+    this.cx = worldW / 2 - (sx - viewW / 2) / this.zoom;
+    this.cy = worldH / 2 - (sy - viewH / 2) / this.zoom;
   }
 
   toWorld(sx: number, sy: number, viewW: number, viewH: number): [number, number] {
