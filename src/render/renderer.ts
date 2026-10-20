@@ -3,6 +3,7 @@
 
 import { CREATURE_STRIDE, type FrameMessage } from '../worker/protocol';
 import type { SimConfig, ZoneAccess } from '../sim/types';
+import { bodyShape, drawnHalfExtents, effectiveDisplayScale, noseDepth } from './sizing';
 
 export const COLORS = {
   background: '#f5f6f8',
@@ -68,6 +69,8 @@ export function drawFrame(
   frame: FrameMessage | null,
   selectedId: number | null,
   selectedVision: number,
+  /** Viewer's display-scale preference (see sizing.ts); does not affect the simulation. */
+  displayScale: number,
 ): void {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = COLORS.background;
@@ -119,8 +122,8 @@ export function drawFrame(
   // rasteriser superlinear (measured: 20k bodies in one path ≈ 1.6 s/frame).
   const CHUNK = 512;
 
-  // food: small squares
-  const fr = Math.max(config.food.radius, 1.2 / z);
+  // food: small squares in chunked paths (cheaper than one fillRect call per item at large counts)
+  const fr = Math.max(config.food.radius, 1 / z);
   const food = frame.food;
   ctx.fillStyle = COLORS.food;
   ctx.beginPath();
@@ -130,11 +133,12 @@ export function drawFrame(
   }
   ctx.fill();
 
-  // bodies: oriented rectangles, batched per species. Tiny bodies get a minimum on-screen size.
-  const minHalf = 0.9 / z;
+  // bodies, batched per species. Drawn size = physical size × display scale, with a minimum on-screen
+  // size; the physical size itself is untouched (see sizing.ts).
+  const scale = effectiveDisplayScale(displayScale, frame.count, W * H);
   const c = frame.creatures;
-  // visible world rectangle (+ margin for the largest body) for culling when zoomed in
-  const margin = 20;
+  // visible world rectangle (+ margin for the largest drawn body) for culling when zoomed in
+  const margin = 20 * scale;
   const vx0 = cam.cx - viewW / 2 / z - margin, vx1 = cam.cx + viewW / 2 / z + margin;
   const vy0 = cam.cy - viewH / 2 / z - margin, vy1 = cam.cy + viewH / 2 / z + margin;
   for (const sp of [0, 1]) {
@@ -146,17 +150,27 @@ export function drawFrame(
       if (c[o + 5] !== sp) continue;
       const x = c[o], y = c[o + 1], a = c[o + 2];
       if (x < vx0 || x > vx1 || y < vy0 || y > vy1) continue;
-      const hw = Math.max(c[o + 3] * 0.5, minHalf), hh = Math.max(c[o + 4] * 0.5, minHalf);
-      if ((hw > hh ? hw : hh) * z < 1.5) {
-        // under ~3 px orientation is invisible: one axis-aligned square, no trig
+      const [hw, hh] = drawnHalfExtents(c[o + 3], c[o + 4], scale, z);
+      const shape = bodyShape(hw, hh, z);
+      if (shape === 'square') {
+        // a few pixels across: orientation is invisible, so an axis-aligned square (no trig, and
+        // much cheaper to rasterise than a rotated polygon)
         const r = (hw + hh) * 0.5;
         ctx.rect(x - r, y - r, r * 2, r * 2);
       } else {
         const cs = Math.cos(a), sn = Math.sin(a);
-        const ax = cs * hw, ay = sn * hw; // along heading
-        const bx = -sn * hh, by = cs * hh; // across heading
-        ctx.moveTo(x + ax + bx, y + ay + by);
-        ctx.lineTo(x + ax - bx, y + ay - by);
+        const ax = cs * hw, ay = sn * hw; // half length along heading
+        const bx = -sn * hh, by = cs * hh; // half width across heading
+        if (shape === 'rect') {
+          ctx.moveTo(x + ax + bx, y + ay + by);
+          ctx.lineTo(x + ax - bx, y + ay - by);
+        } else {
+          // blunt nose at the front: tip on the heading axis, shoulders set back by `nose`
+          const k = (hw - noseDepth(hw, hh)) / hw;
+          ctx.moveTo(x + ax * k + bx, y + ay * k + by);
+          ctx.lineTo(x + ax, y + ay);
+          ctx.lineTo(x + ax * k - bx, y + ay * k - by);
+        }
         ctx.lineTo(x - ax - bx, y - ay - by);
         ctx.lineTo(x - ax + bx, y - ay + by);
         ctx.closePath();
@@ -171,13 +185,27 @@ export function drawFrame(
     const i = indexOf(frame, selectedId);
     if (i >= 0) {
       const o = i * CREATURE_STRIDE;
-      const x = c[o], y = c[o + 1];
-      const r = Math.max(c[o + 3], c[o + 4]) * 0.5 + 5 / z;
+      const x = c[o], y = c[o + 1], a = c[o + 2];
+      const [dhw, dhh] = drawnHalfExtents(c[o + 3], c[o + 4], scale, z);
+      const r = Math.max(dhw, dhh) + 5 / z;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.strokeStyle = COLORS.select;
       ctx.lineWidth = 2 / z;
       ctx.stroke();
+      if (scale > 1.01) {
+        // the true collision rectangle, so an enlarged drawing never misrepresents the trait
+        const hw = c[o + 3] * 0.5, hh = c[o + 4] * 0.5;
+        const cs = Math.cos(a), sn = Math.sin(a);
+        ctx.beginPath();
+        ctx.moveTo(x + cs * hw - sn * hh, y + sn * hw + cs * hh);
+        ctx.lineTo(x + cs * hw + sn * hh, y + sn * hw - cs * hh);
+        ctx.lineTo(x - cs * hw + sn * hh, y - sn * hw - cs * hh);
+        ctx.lineTo(x - cs * hw - sn * hh, y - sn * hw + cs * hh);
+        ctx.closePath();
+        ctx.lineWidth = 1.25 / z;
+        ctx.stroke();
+      }
       if (selectedVision > 0) {
         ctx.beginPath();
         ctx.arc(x, y, selectedVision, 0, Math.PI * 2);
@@ -196,14 +224,14 @@ export function indexOf(frame: FrameMessage, id: number): number {
   return -1;
 }
 
-/** Nearest creature to a world point within `maxDist` world units, or null. */
-export function pick(frame: FrameMessage, wx: number, wy: number, maxDist: number): number | null {
+/** Nearest creature to a world point within `maxDist` world units of its drawn body, or null. */
+export function pick(frame: FrameMessage, wx: number, wy: number, maxDist: number, drawScale = 1): number | null {
   let best: number | null = null;
   let bestD = maxDist * maxDist;
   const c = frame.creatures;
   for (let i = 0; i < frame.count; i++) {
     const o = i * CREATURE_STRIDE;
-    const r = Math.max(c[o + 3], c[o + 4]) * 0.5;
+    const r = Math.max(c[o + 3], c[o + 4]) * 0.5 * drawScale;
     const dx = c[o] - wx, dy = c[o + 1] - wy;
     const d = Math.max(0, Math.sqrt(dx * dx + dy * dy) - r);
     if (d * d <= bestD) { bestD = d * d; best = frame.ids[i]; }

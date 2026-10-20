@@ -45,10 +45,22 @@ jobs:
         run: |
           grep -q 'href="/EvolutionLab/assets/' dist/index.html
           grep -q 'src="/EvolutionLab/assets/' dist/index.html
-          if grep -E '(href|src)="/(assets|favicon)' dist/index.html; then
+          grep -q 'href="/EvolutionLab/logo.svg"' dist/index.html
+          if grep -E '(href|src)="/(assets|favicon|logo|apple-touch)' dist/index.html; then
             echo "Found an asset URL without the /EvolutionLab/ base path" >&2
             exit 1
           fi
+
+      # Real-browser regression test of the built site (black-canvas probe, icons, 404s, core flows).
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          install-dependencies: true
+
+      - name: Browser smoke test
+        run: npm run e2e
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
 
       - uses: actions/configure-pages@v6
 

@@ -10,6 +10,7 @@ import { SimCanvas } from './ui/SimCanvas';
 import { STATS_MIN_HEIGHT, StatsDock } from './ui/StatsPanel';
 import { TransportDock } from './ui/TransportDock';
 import { loadLayout, saveLayout, useMediaQuery, usePoll } from './ui/hooks';
+import { DEFAULT_DISPLAY_SCALE, DISPLAY_SCALE_MAX, DISPLAY_SCALE_MIN } from './render/sizing';
 
 /** Settings panel width on wide screens (px). */
 const SETTINGS_W = 360;
@@ -51,6 +52,11 @@ export default function App() {
   const [statsOpen, setStatsOpen] = useState(() => window.matchMedia(WIDE_QUERY).matches && (loadLayout().stats ?? false));
   const [statsHeight, setStatsHeight] = useState(() => loadLayout().statsHeight ?? defaultStatsHeight());
   const [viewportH, setViewportH] = useState(window.innerHeight);
+  const [displayScale, setDisplayScale] = useState(() => {
+    const v = loadLayout().displayScale;
+    return typeof v === 'number' && v >= DISPLAY_SCALE_MIN && v <= DISPLAY_SCALE_MAX ? v : DEFAULT_DISPLAY_SCALE;
+  });
+  useEffect(() => { saveLayout({ displayScale }); }, [displayScale]);
 
   const firstLayoutEffect = useRef(true);
   useEffect(() => {
@@ -188,10 +194,11 @@ export default function App() {
               fitSignal={fitSignal}
               zoomSignal={zoomSignal}
               insetBottom={dockHeight}
+              displayScale={displayScale}
             />
 
             <div className="pointer-events-none absolute left-3 top-3 flex max-w-[calc(100%-6rem)] flex-col items-start gap-2">
-              <Legend />
+              <Legend displayScale={displayScale} />
               {selectedId !== null && (
                 <div className="pointer-events-auto">
                   <SelectedCreature key={selectedId} client={client} follow={follow} onFollow={setFollow} onClose={onCloseSelection} />
@@ -242,6 +249,8 @@ export default function App() {
             onReset={onReset}
             onLoadConfig={onLoadConfig}
             onClose={closeSettings}
+            displayScale={displayScale}
+            onDisplayScale={setDisplayScale}
           />
         </SettingsShell>
       </div>
@@ -303,12 +312,17 @@ function SettingsShell({ wide, open, onClose, children }: { wide: boolean; open:
   );
 }
 
-const Legend = memo(function Legend() {
+const Legend = memo(function Legend({ displayScale }: { displayScale: number }) {
   return (
     <div className="pointer-events-auto flex items-center gap-3 rounded-full bg-white/90 px-3 py-1 text-[11px] text-neutral-600 shadow-sm ring-1 ring-black/5 backdrop-blur">
       <Swatch color={COLORS.prey} label="피식자" />
       <Swatch color={COLORS.predator} label="포식자" />
       <Swatch color={COLORS.food} label="먹이" />
+      {displayScale !== 1 && (
+        <span className="text-neutral-400" title="개체를 실제 크기보다 크게 그립니다. 충돌, 에너지, 유전자 값에는 영향이 없습니다. 개체를 선택하면 실제 충돌 크기가 파란 사각형으로 표시됩니다. 설정 › 화면 표시에서 바꿀 수 있습니다.">
+          표시 ×{displayScale.toFixed(1)}
+        </span>
+      )}
       <span className="hidden text-neutral-400 2xl:inline">클릭: 선택 · 드래그: 이동 · 휠: 확대 · Space: 시작/정지</span>
     </div>
   );

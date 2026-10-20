@@ -3,6 +3,7 @@ import { PRESETS } from '../sim/presets';
 import { GENE_KEYS, type ReproductionMode, type SimConfig, type SpeciesConfig, type ZoneAccess } from '../sim/types';
 import { Button, Field, fmt, GroupLabel, ResetBadge, Section, Segmented, Slider, Toggle } from './controls';
 import { ACCESS_LABEL, GENE_LABEL, REPRO_LABEL } from './labels';
+import { DISPLAY_SCALE_MAX, DISPLAY_SCALE_MIN } from '../render/sizing';
 
 interface Props {
   config: SimConfig;
@@ -13,6 +14,8 @@ interface Props {
   onReset: () => void;
   onLoadConfig: (c: SimConfig) => void;
   onClose: () => void;
+  displayScale: number;
+  onDisplayScale: (v: number) => void;
 }
 
 type SpKey = 'prey' | 'predator';
@@ -22,7 +25,7 @@ type SpKey = 'prey' | 'predator';
  * then the environment, then per-species rules, and finally advanced parameters. Collapsed
  * sections still show their current values.
  */
-export const ControlPanel = memo(function ControlPanel({ config: c, presetId, resetPending, onUpdate, onPreset, onReset, onLoadConfig, onClose }: Props) {
+export const ControlPanel = memo(function ControlPanel({ config: c, presetId, resetPending, onUpdate, onPreset, onReset, onLoadConfig, onClose, displayScale, onDisplayScale }: Props) {
   const [sp, setSp] = useState<SpKey>('prey');
   const fileRef = useRef<HTMLInputElement>(null);
   const s = c[sp];
@@ -97,6 +100,26 @@ export const ControlPanel = memo(function ControlPanel({ config: c, presetId, re
             <input ref={fileRef} type="file" accept="application/json" className="hidden" aria-label="설정 파일 선택" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadConfig(f); e.target.value = ''; }} />
           </div>
           {resetPending && <p className="m-0 text-[11px] text-amber-700">재시작이 필요한 설정이 바뀌었습니다. 초기화하면 적용됩니다.</p>}
+        </Section>
+
+        <GroupLabel>화면</GroupLabel>
+        <Section title="화면 표시" summary={displayScale === 1 ? '실제 크기' : `개체 ×${displayScale.toFixed(1)}`}>
+          <Slider
+            label="개체 표시 크기"
+            value={displayScale}
+            min={DISPLAY_SCALE_MIN}
+            max={DISPLAY_SCALE_MAX}
+            step={0.1}
+            format={(v) => (v === 1 ? '실제 크기' : `×${v.toFixed(1)}`)}
+            onChange={onDisplayScale}
+          />
+          <p className="m-0 text-[11px] leading-relaxed text-neutral-500">
+            화면에 그리는 크기만 바뀝니다. 충돌 판정, 에너지, 유전자 값은 그대로입니다. 개체를 선택하면 실제 충돌 크기가 파란 사각형으로 표시됩니다.
+            개체가 아주 많으면 서로 덮이지 않도록 자동으로 실제 크기 쪽으로 줄어듭니다.
+          </p>
+          {displayScale !== 1 && (
+            <Button variant="ghost" onClick={() => onDisplayScale(1)} className="-ml-2">실제 크기로 보기</Button>
+          )}
         </Section>
 
         <GroupLabel>환경</GroupLabel>

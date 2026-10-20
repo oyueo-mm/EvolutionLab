@@ -1,5 +1,5 @@
-// Experiment presets. Numbers marked "tuned" were chosen by running headless simulations
-// (scripts/tune.ts) so populations persist; the original 2019 author never published values.
+// Experiment presets. All numbers are design assumptions of this project, chosen by running
+// headless simulations (scripts/tune.ts) so populations persist. See docs/RULES.md.
 
 import type { GeneKey, GeneParams, SimConfig, SpeciesConfig, ZoneConfig } from './types';
 
@@ -70,7 +70,7 @@ function experimentA(zone: boolean): SimConfig {
   c.zones = [centralZone(zone)];
   c.prey.initialCount = 200;
   c.prey.reproduction = { ...c.prey.reproduction, mode: 'timer', interval: 3, maxPopulation: 500 };
-  c.prey.lifespan = 0; // immortal: predation is the only cause of death, as in the original
+  c.prey.lifespan = 0; // immortal: predation is the only cause of death
   c.predator.initialCount = 25;
   c.predator.genes.speed.initial = 80;
   c.predator.genes.width.initial = 14;

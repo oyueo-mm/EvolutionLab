@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="EvolutionLab">
+  <!-- EvolutionLab mark: a tiny ecosystem. The white disc is the world; the predator (red)
+       heads for the prey (dark), the prey heads for the food (green). Bodies use the same
+       outline the simulator draws: a rectangle whose front tapers over one half-width. -->
+  <rect width="64" height="64" rx="14" fill="#17191e"/>
+  <circle cx="32" cy="32" r="25" fill="#ffffff"/>
+  <rect x="36.5" y="38" width="8.5" height="8.5" rx="2" fill="#2f9e44"/>
+  <path d="M7 0 .5-6.5-7-6.5-7 6.5 .5 6.5Z" transform="translate(23.5 31) rotate(34.5)" fill="#1f2328"/>
+  <path d="M9 0 2-7-9-7-9 7 2 7Z" transform="translate(40 21.5) rotate(152.8)" fill="#d9412e"/>
+</svg>

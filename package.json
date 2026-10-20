@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "bench": "tsx scripts/bench.ts",
-    "tune": "tsx scripts/tune.ts"
+    "tune": "tsx scripts/tune.ts",
+    "e2e": "node e2e/smoke.mjs",
+    "icons": "node scripts/build-icons.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",
@@ -24,6 +26,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "puppeteer-core": "^25.15.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

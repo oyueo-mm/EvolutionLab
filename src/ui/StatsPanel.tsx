@@ -258,10 +258,19 @@ function StatsBody({ client, show }: { client: SimClient; show: Show }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const rows = useMemo(() => toChartRows(client.history.samples), [version, client]);
 
+  // Mount the charts one per animation frame. Mounting all eight Recharts trees at once is a single
+  // 100–200 ms main-thread task (measured), which stalls the canvas right when the panel opens.
+  const [mounted, setMounted] = useState(1);
+  useEffect(() => {
+    if (mounted >= CHARTS.length) return;
+    const id = requestAnimationFrame(() => setMounted((m) => m + 1));
+    return () => cancelAnimationFrame(id);
+  }, [mounted]);
+
   return (
     <div className="thin-scroll min-h-0 flex-1 overflow-y-auto">
       <div className="grid min-h-full auto-rows-[minmax(150px,1fr)] grid-cols-1 gap-x-8 gap-y-4 px-5 pb-4 pt-3 sm:grid-cols-2 xl:grid-cols-4">
-        {CHARTS.map((def) => <MiniChart key={def.title} def={def} rows={rows} show={show} />)}
+        {CHARTS.map((def, i) => (i < mounted ? <MiniChart key={def.title} def={def} rows={rows} show={show} /> : <div key={def.title} aria-hidden className="min-w-0" />))}
       </div>
     </div>
   );

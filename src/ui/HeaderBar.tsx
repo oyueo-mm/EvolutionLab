@@ -23,7 +23,7 @@ export const HeaderBar = memo(function HeaderBar({ client, fpsRef, presetName, s
       <div className="flex min-w-0 items-center gap-3">
         <Logo />
         <div className="min-w-0 leading-tight">
-          <h1 className="m-0 truncate text-sm font-semibold tracking-tight text-neutral-900">Artificial Life Lab</h1>
+          <h1 className="m-0 truncate text-sm font-semibold tracking-tight text-neutral-900" title="EvolutionLab · Artificial Life Lab">EvolutionLab</h1>
           <button
             type="button"
             onClick={onToggleSettings}
@@ -96,7 +96,7 @@ const HeaderMetrics = memo(function HeaderMetrics({ client, fpsRef, dt, running,
       </Group>
       <Divider className="hidden xl:block" />
       <Group label="성능" muted className="hidden xl:flex">
-        <Metric label="FPS" value={m.fps} title="화면 갱신 루프 횟수/초. 바뀐 것이 없는 프레임은 다시 그리지 않아 CPU를 아낍니다." subtle />
+        <Metric label="FPS" value={m.fps} title="실제로 화면을 다시 그린 횟수/초. 바뀐 것이 없으면 그리지 않으므로, 실행 중에는 Worker 스냅샷 주기(약 30)에 가깝고 일시정지 중에는 0입니다." subtle />
         <Metric label="UPS" value={m.ups} title="시뮬레이션 틱/초 (Worker)" subtle />
         <Metric label="틱" value={`${m.msPerTick.toFixed(2)}ms`} title="틱 하나의 평균 계산 시간" subtle className="hidden 2xl:block" />
         <Metric label="실속도" value={running ? `${m.achieved.toFixed(1)}×` : '—'} title={behind ? '요청한 속도를 따라가지 못하고 있습니다' : '실제로 달성한 시뮬레이션 속도'} subtle warn={behind} />
@@ -133,13 +133,6 @@ function Metric({ label, value, dot, title, subtle, warn, className = '' }: { la
 }
 
 function Logo() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 26 26" aria-hidden className="shrink-0">
-      <rect width="26" height="26" rx="7" fill="#171717" />
-      <circle cx="13" cy="13" r="7.5" fill="none" stroke="#525252" strokeDasharray="2 2" />
-      <rect x="7" y="9" width="4" height="4" fill="#f5f5f5" transform="rotate(20 9 11)" />
-      <rect x="15" y="14" width="5" height="3" fill="#d9412e" transform="rotate(-30 17.5 15.5)" />
-      <circle cx="16" cy="8.5" r="1.3" fill="#2f9e44" />
-    </svg>
-  );
+  // Same file as the favicon (public/logo.svg), so the brand mark has a single source.
+  return <img src={`${import.meta.env.BASE_URL}logo.svg`} width={28} height={28} alt="" className="shrink-0 rounded-[7px]" />;
 }

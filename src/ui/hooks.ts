@@ -43,6 +43,8 @@ export interface StoredLayout {
   settings?: boolean;
   stats?: boolean;
   statsHeight?: number;
+  /** Viewing preference only; never part of a saved experiment config. */
+  displayScale?: number;
 }
 
 export function loadLayout(): StoredLayout {
@@ -54,9 +56,9 @@ export function loadLayout(): StoredLayout {
   }
 }
 
-export function saveLayout(layout: StoredLayout): void {
+export function saveLayout(patch: StoredLayout): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(layout));
+    localStorage.setItem(KEY, JSON.stringify({ ...loadLayout(), ...patch }));
   } catch {
     /* storage unavailable: the layout simply is not remembered */
   }
